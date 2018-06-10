@@ -16,12 +16,11 @@ namespace scene
         EInstance ei = EInstance(_data.getSize());
         _map.insert(eastl::make_pair(e, ei));
 
+        TransformData trData = { Vector2i(0, 0), Vector2i(0, 0) };
         EInstance none;
+        HierarchyData hierData = { none, none, none, none };
 
-        _data.push(e,
-            Vector2i(0, 0), Vector2i(0, 0),
-            none, none, none, none
-        );
+        _data.push(e, trData, hierData);
 
         return ei;
     }
@@ -76,24 +75,24 @@ namespace scene
 
     void TransformSystem::removeChild(EInstance ei)
     {
-        EInstance parent = _data.parent[ei.index];
-        EInstance prevSib = _data.prevSib[ei.index];
-        EInstance nextSib = _data.nextSib[ei.index];
+        EInstance parent = _data.hierData[ei.index].parent;
+        EInstance prevSib = _data.hierData[ei.index].prevSib;
+        EInstance nextSib = _data.hierData[ei.index].nextSib;
 
         //Update the parent if we're the first child
-        if (parent.isValid() && _data.firstChild[parent.index] == ei)
+        if (parent.isValid() && _data.hierData[parent.index].firstChild == ei)
         {
-            _data.firstChild[parent.index] = nextSib;
+            _data.hierData[parent.index].firstChild = nextSib;
         }
         //Update the previous sibling to point to the next
         if (prevSib.isValid())
         {
-            _data.nextSib[prevSib.index] = nextSib;
+            _data.hierData[prevSib.index].nextSib = nextSib;
         }
         //Update the next sibling to point to the previous
         if (nextSib.isValid())
         {
-            _data.prevSib[nextSib.index] = prevSib;
+            _data.hierData[nextSib.index].prevSib = prevSib;
         }
     }
 
@@ -113,24 +112,24 @@ namespace scene
 
         //Update other references to source
         {
-            EInstance parent = _data.parent[srcIdx];
-            EInstance prevSib = _data.prevSib[srcIdx];
-            EInstance nextSib = _data.nextSib[srcIdx];
+            EInstance parent = _data.hierData[srcIdx].parent;
+            EInstance prevSib = _data.hierData[srcIdx].prevSib;
+            EInstance nextSib = _data.hierData[srcIdx].nextSib;
 
             //Update the parent if we're the first child
-            if (parent.isValid() && _data.firstChild[parent.index] == src)
+            if (parent.isValid() && _data.hierData[parent.index].firstChild == src)
             {
-                _data.firstChild[parent.index] = dst;
+                _data.hierData[parent.index].firstChild = dst;
             }
             //Update the previous sibling to point to the next
             if (prevSib.isValid())
             {
-                _data.nextSib[prevSib.index] = dst;
+                _data.hierData[prevSib.index].nextSib = dst;
             }
             //Update the next sibling to point to the previous
             if (nextSib.isValid())
             {
-                _data.prevSib[nextSib.index] = dst;
+                _data.hierData[nextSib.index].prevSib = dst;
             }
         }
     }
@@ -158,10 +157,10 @@ namespace scene
 
     void TransformSystem::handleDestroyedChildren(EntityManager& entityManager, EInstance ei)
     {
-        EInstance child = _data.firstChild[ei.index];
+        EInstance child = _data.hierData[ei.index].firstChild;
         while (child.isValid())
         {
-            EInstance next = _data.nextSib[child.index];
+            EInstance next = _data.hierData[child.index].nextSib;
             handleDestroyedChildren(entityManager, child);
             entityManager.destroy(getEntity(child));
             child = next;
@@ -171,13 +170,13 @@ namespace scene
     void TransformSystem::setLocalPos(EInstance ei, const Vector2i& localPos)
     {
         uint32_t idx = ei.index;
-        _data.localPos[idx] = localPos;
+        _data.trData[idx].localPos = localPos;
 
         //Update world position
-        EInstance parent = _data.parent[idx];
+        EInstance parent = _data.hierData[idx].parent;
         if (parent.isValid())
         {
-            updateWorldPos(ei, _data.worldPos[parent.index]);
+            updateWorldPos(ei, _data.trData[parent.index].worldPos);
         }
         else
         {
@@ -188,57 +187,57 @@ namespace scene
     void TransformSystem::setWorldPos(EInstance ei, const Vector2i& worldPos)
     {
         uint32_t idx = ei.index;
-        _data.worldPos[idx] = worldPos;
+        _data.trData[idx].worldPos = worldPos;
 
         //Update local position
-        EInstance parent = _data.parent[idx];
+        EInstance parent = _data.hierData[idx].parent;
         if (parent.isValid())
         {
-            _data.localPos[idx] = worldPos - _data.worldPos[parent.index];
+            _data.trData[idx].localPos = worldPos - _data.trData[parent.index].worldPos;
         }
         else
         {
-            _data.localPos[idx] = worldPos;
+            _data.trData[idx].localPos = worldPos;
         }
 
         //Update child world positions
-        EInstance child = _data.firstChild[idx];
+        EInstance child = _data.hierData[idx].firstChild;
         while (child.isValid())
         {
-            updateWorldPos(child, _data.worldPos[idx]);
-            child = _data.nextSib[child.index];
+            updateWorldPos(child, _data.trData[idx].worldPos);
+            child = _data.hierData[child.index].nextSib;
         }
     }
 
     void TransformSystem::setParent(EInstance child, EInstance parent)
     {
-        if (_data.parent[child.index].isValid())
+        if (_data.hierData[child.index].parent.isValid())
         {
             removeChild(child);
         }
 
-        _data.parent[child.index] = parent;
+        _data.hierData[child.index].parent = parent;
 
         //Update the parent
-        EInstance oldChild = _data.firstChild[parent.index];
-        _data.firstChild[parent.index] = child;
-        _data.nextSib[child.index] = oldChild;
+        EInstance oldChild = _data.hierData[parent.index].firstChild;
+        _data.hierData[parent.index].firstChild = child;
+        _data.hierData[child.index].nextSib = oldChild;
         if (oldChild.isValid())
         {
-            _data.prevSib[oldChild.index] = child;
+            _data.hierData[oldChild.index].prevSib = child;
         }
     }
 
     void TransformSystem::updateWorldPos(EInstance ei, const Vector2i& parPos)
     {
-        _data.worldPos[ei.index] = parPos + _data.localPos[ei.index];
+        _data.trData[ei.index].worldPos = parPos + _data.trData[ei.index].localPos;
 
         //Update child world positions
-        EInstance child = _data.firstChild[ei.index];
+        EInstance child = _data.hierData[ei.index].firstChild;
         while (child.isValid())
         {
-            updateWorldPos(child, _data.worldPos[ei.index]);
-            child = _data.nextSib[child.index];
+            updateWorldPos(child, _data.trData[ei.index].worldPos);
+            child = _data.hierData[child.index].nextSib;
         }
     }
 }

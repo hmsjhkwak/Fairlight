@@ -23,14 +23,40 @@ namespace scene
     private:
         eastl::hash_map<Entity, EInstance> _map;
 
-        CLASS_SOA_VECTOR7(Storage,
+        struct TransformData
+        {
+            Vector2i localPos;
+            Vector2i worldPos;
+
+            template <typename Archive>
+            void serialize(Archive& ar)
+            {
+                ar.serializeCustom(localPos);
+                ar.serializeCustom(worldPos);
+            }
+        };
+
+        struct HierarchyData
+        {
+            EInstance parent;
+            EInstance firstChild;
+            EInstance nextSib;
+            EInstance prevSib;
+
+            template <typename Archive>
+            void serialize(Archive& ar)
+            {
+                ar.serializeCustom(parent);
+                ar.serializeCustom(firstChild);
+                ar.serializeCustom(nextSib);
+                ar.serializeCustom(prevSib);
+            }
+        };
+
+        CLASS_SOA_VECTOR3(Storage,
             Entity, entities,
-            Vector2i, localPos,
-            Vector2i, worldPos,
-            EInstance, parent,
-            EInstance, firstChild,
-            EInstance, nextSib,
-            EInstance, prevSib);
+            TransformData, trData,
+            HierarchyData, hierData);
         Storage _data;
 
     public:
@@ -56,12 +82,8 @@ namespace scene
 
             //Serialize fields
             AR_SERIALIZE_ARRAY_CUSTOM(ar, _data.entities, length);
-            AR_SERIALIZE_ARRAY_CUSTOM(ar, _data.localPos, length);
-            AR_SERIALIZE_ARRAY_CUSTOM(ar, _data.worldPos, length);
-            AR_SERIALIZE_ARRAY_CUSTOM(ar, _data.parent, length);
-            AR_SERIALIZE_ARRAY_CUSTOM(ar, _data.firstChild, length);
-            AR_SERIALIZE_ARRAY_CUSTOM(ar, _data.nextSib, length);
-            AR_SERIALIZE_ARRAY_CUSTOM(ar, _data.prevSib, length);
+            AR_SERIALIZE_ARRAY_CUSTOM(ar, _data.trData, length);
+            AR_SERIALIZE_ARRAY_CUSTOM(ar, _data.hierData, length);
 
             //Add entities to map
             if (ar.IsReading)
@@ -92,12 +114,12 @@ namespace scene
             return _map[e];
         }
         inline Entity getEntity(EInstance ei) { return _data.entities[ei.index]; }
-        inline Vector2i getLocalPos(EInstance ei) { return _data.localPos[ei.index]; }
-        inline Vector2i getWorldPos(EInstance ei) { return _data.worldPos[ei.index]; }
-        inline EInstance getParent(EInstance ei) { return _data.parent[ei.index]; }
-        inline EInstance getFirstChild(EInstance ei) { return _data.firstChild[ei.index]; }
-        inline EInstance getNextSib(EInstance ei) { return _data.nextSib[ei.index]; }
-        inline EInstance getPrevSib(EInstance ei) { return _data.prevSib[ei.index]; }
+        inline Vector2i getLocalPos(EInstance ei) { return _data.trData[ei.index].localPos; }
+        inline Vector2i getWorldPos(EInstance ei) { return _data.trData[ei.index].worldPos; }
+        inline EInstance getParent(EInstance ei) { return _data.hierData[ei.index].parent; }
+        inline EInstance getFirstChild(EInstance ei) { return _data.hierData[ei.index].firstChild; }
+        inline EInstance getNextSib(EInstance ei) { return _data.hierData[ei.index].nextSib; }
+        inline EInstance getPrevSib(EInstance ei) { return _data.hierData[ei.index].prevSib; }
 
         void setLocalPos(EInstance ei, const Vector2i& localPos);
         void setWorldPos(EInstance ei, const Vector2i& worldPos);
