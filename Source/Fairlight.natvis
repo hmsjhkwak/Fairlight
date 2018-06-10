@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
+  <Type Name="asset::AssetRef">
+    <DisplayString>Name = {(const char*)asset::AssetNameTable::g_NameTable.names.mpBegin[nameIndex].mpBegin}</DisplayString>
+    <Expand>
+      <Item Name="Hash">hash</Item>
+      <Item Name="Index">nameIndex</Item>
+    </Expand>
+  </Type>
+  <Type Name="scene::Entity">
+    <DisplayString>Name = {(const char*)scene::EntityManager::sInstance->_debugNames.mpBegin[_index].mpBegin}</DisplayString>
+  </Type>
+</AutoVisualizer>

@@ -1,0 +1,13 @@
+{
+    "fullscreen": false,
+    "width": 1920,
+    "height": 1080,
+    "keys": {
+        "left": "Left",
+        "right": "Right",
+        "up": "Up",
+        "down": "Down",
+        "jump": "Z",
+        "attack": "X"
+    }
+}
