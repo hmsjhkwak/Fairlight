@@ -12,7 +12,7 @@ namespace scene
         EInstance();
         EInstance(uint32_t index);
 
-        bool isValid();
+        bool isValid() const;
         bool operator==(const EInstance& other) const;
 
         template <typename Archive>
