@@ -56,7 +56,7 @@ namespace math
 
 
 
-        inline Vector2f operator-() const
+        inline const Vector2f operator-() const
         {
             return Vector2f(-x, -y);
         }
