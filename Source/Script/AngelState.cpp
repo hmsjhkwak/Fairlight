@@ -24,9 +24,9 @@ void messageCallback(const asSMessageInfo *msg, void *param)
     printf("%s (%d, %d) : %s : %s\n", msg->section, msg->row, msg->col, type, msg->message);
 }
 
-void print(std::string& msg)
+void print(const std::string& msg)
 {
-    printf("%s", msg.c_str());
+    printf(msg.c_str());
 }
 
 uint32_t strhash(const std::string& input)
