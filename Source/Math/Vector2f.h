@@ -167,7 +167,7 @@ namespace math
         inline static Vector2f slerp(const Vector2f& start, const Vector2f& end, float t)
         {
             float dot = Vector2f::dot(start, end);
-            clamp(dot, -1.0f, 1.0f);
+            dot = clamp(dot, -1.0f, 1.0f);
 
             float theta = std::acos(dot) * t;
             Vector2f rel = end - start * dot;
