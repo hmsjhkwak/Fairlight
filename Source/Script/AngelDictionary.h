@@ -156,7 +156,7 @@ public:
     void DeleteAll();
 
     // Get an array of all keys
-    CScriptArray *GetKeys() const;
+    const CScriptArray *GetKeys() const;
 
     // STL style iterator
     class CIterator
